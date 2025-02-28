@@ -1,4 +1,5 @@
 const prisma = require("../helpers/prisma");
+const { postSchema } = require("../helpers/schema");
 
 const getPosts = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ const getPosts = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    
+
     return res.status(500).json({
       success: false,
       message: "Get data posts failed",
@@ -19,6 +20,45 @@ const getPosts = async (req, res) => {
   }
 };
 
+const createPost = async (req, res) => {
+  try {
+    const parse = postSchema.safeParse(req.body);
+
+    if (!parse.success) {
+      const errorMessages = parse.error.issues.map(
+        (error) => `${error.path} - ${error.message}`
+      );
+      return res.status(400).json({
+        success: false,
+        message: errorMessages,
+        data: null,
+      });
+    }
+
+    const post = await prisma.post.create({
+      data: {
+        title: parse.data.title,
+        author_name: parse.data.author_name,
+        content: parse.data.content,
+        published: parse.data.published,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: "Create post successfully",
+      data: post,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Create post failed",
+    });
+  }
+};
+
 module.exports = {
   getPosts,
+  createPost,
 };
